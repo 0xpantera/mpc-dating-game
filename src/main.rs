@@ -28,7 +28,8 @@ impl Deck {
     fn join(d1: &mut Deck, d2: &mut Deck) -> Deck {
         let mut new_deck = d1.cards.clone();
         new_deck.push(Card::K);
-        new_deck.append(&mut d2.cards);
+        let mut snd_deck = d2.cards.clone();
+        new_deck.append(&mut snd_deck);
         Deck { cards: new_deck }
     }
 
@@ -48,22 +49,6 @@ impl Deck {
                 }
         }
         return false;
-        /* comparison is being made per individually for each position
-        fix!
-        let _comps = |i: usize| {
-            self.cards[i] == Card::King && 
-            (self.cards[(i + 1) % 5]) == Card::King &&
-            (self.cards[(i + 2) % 5]) == Card::King
-        }
-        let test = self.cards
-            .iter()
-            .enumerate()
-            .map(|(i, _)| comps(i)).collect::<Vec<bool>>();
-            .fold(true, |acc, x| acc == x);
-        */
-
-
-        
     }
 
     /*
@@ -91,7 +76,11 @@ struct Alice {
 }
 
 impl Alice {
-    fn encode(&self, input: bool) -> Deck {
+    fn new(date: bool) -> Alice {
+        Alice { date_bob: date }
+    }
+
+    fn encode(self) -> Deck {
         match self.date_bob {
             true => Deck { cards: vec![Card::Q, Card::K] },
             false => Deck { cards: vec![Card::K, Card::Q] },
@@ -104,8 +93,11 @@ struct Bob {
 }
 
 impl Bob {
-    // TODO figure out input
-    fn encode(&self, input: bool) -> Deck {
+    fn new(date: bool) -> Bob {
+        Bob { date_alice: date }
+    }
+
+    fn encode(self) -> Deck {
         match self.date_alice {
             true => Deck { cards: vec![Card::K, Card::Q] },
             false => Deck { cards: vec![Card::Q, Card::K] },
@@ -115,19 +107,9 @@ impl Bob {
 
 #[cfg(test)]
 mod tests {
-    use super::{Deck, Card::K, Card::Q};
+    use std::borrow::BorrowMut;
 
-    fn gen_starting_deck() -> Vec<Deck> {
-        let mut base_deck = Deck::new(vec![K, K, K, Q, Q]);
-
-        let mut permutations = Vec::with_capacity(5);
-
-        for _ in 1..=5 {
-            permutations.push(Deck::cyclic_shift(&mut base_deck, 1));
-        }
-
-        permutations
-    }
+    use super::{Alice, Bob, Deck, Card::K, Card::Q};
 
     #[test]
     fn shifts_deck() {
@@ -153,5 +135,74 @@ mod tests {
             results.push(decoded);
         }
         assert_eq!(results, vec![true, true, true, true, true]);
+    }
+
+    use rand::{self, Rng};
+    /*
+    Generate inputs for Alice and Bob.
+    1. Encode the inputs to decks.
+    2. Join the decks, with the Alice deck first.
+    3. Shuffle the new deck with a random shift.
+    4. Shuffle the deck again with another random shift.
+    5. Decode the resulting deck and check that you get the required output (match/no match). 
+    */
+    #[test]
+    fn workflow() {
+        let mut alice = Alice::new(true).encode();
+        let mut bob = Bob::new(true).encode();
+
+        let mut joined_deck = Deck::join(&mut alice, &mut bob);
+
+        let fst_shift = rand::thread_rng().gen_range(1..=5);
+        let snd_shift = rand::thread_rng().gen_range(1..=5);
+
+        Deck::cyclic_shift(&mut joined_deck, fst_shift);
+        Deck::cyclic_shift(&mut joined_deck, snd_shift);
+
+        let result = joined_deck.decode();
+
+        assert!(result);
+
+    }
+
+    #[test]
+    fn all_possibilities() {
+        let mut alices = vec![Alice::new(true).encode(), Alice::new(false).encode()];
+        let mut bobs = vec![Bob::new(true).encode(), Bob::new(false).encode()];
+
+        let shifts = 1..5;
+        let mut results: Vec<bool> = Vec::new();
+
+        for shift in shifts {
+            for a in alices.iter_mut() {
+                for b in bobs.iter_mut() {
+                    println!("Alice: {:?}", a);
+                    println!("Bob: {:?}", b);
+                    let mut joined_deck = Deck::join(a, b);
+                    println!("Joined Deck: {:?}", joined_deck);
+                    println!("Num Shifts: {}", shift);
+                    Deck::cyclic_shift(&mut joined_deck, shift);
+                    Deck::cyclic_shift(&mut joined_deck, shift);
+                    let result = joined_deck.decode();
+                    println!("Result: {}", result);
+                    results.push(result);
+                }
+            }
+        }
+
+
+    }
+
+
+    fn gen_starting_deck() -> Vec<Deck> {
+        let mut base_deck = Deck::new(vec![K, K, K, Q, Q]);
+
+        let mut permutations = Vec::with_capacity(5);
+
+        for _ in 1..=5 {
+            permutations.push(Deck::cyclic_shift(&mut base_deck, 1));
+        }
+
+        permutations
     }
 }
