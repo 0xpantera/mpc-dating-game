@@ -50,7 +50,7 @@ fn all_combinations() {
     }
 
     let expected = vec![true, false, false, false, true, false, false, false, 
-                    true, false, false, false, true, false, false, false];
+                        true, false, false, false, true, false, false, false];
 
     assert_eq!(expected, results);
 }

@@ -30,12 +30,10 @@ impl Deck {
     }
 
     /*
-    Implement a method named decode as part of the deck struct.
     The method takes self (a deck of size five) as a parameter and outputs a Boolean value as follows: 
     if there are three kings in a row in our set of five cards we return true. 
-    Note: a king in positions 1 and 5 are considered adjacent, 
-    so if you have a king in positions 1, 2, and 5 we should return true.
-     */
+    Note: a king in positions 1 and 5 are considered adjacent.
+    */
     pub fn decode(&self) -> bool {
         for (i, _) in self.cards.iter().enumerate() {
             if self.cards[i] == Card::K 
@@ -51,15 +49,7 @@ impl Deck {
     Rotates the slice in-place such that the first mid elements of the slice
     move to the end while the last self.len() - mid elements move to the front. 
     After calling rotate_left, the element previously at index mid will become the first element in the slice.
-
-    mid = 3
-    [1, 2, 3, 4, 5]
-    [1, 2, 3]
-    len = 5
-    len_minus_mid = 5 - 3 = 2
-    [4, 5, 1, 2, 3]
-     */
-
+    */
     pub fn cyclic_shift(d: &mut Deck, rotations: usize) -> Deck {
         d.cards.rotate_left(rotations);
         Deck::new(d.cards.clone())
