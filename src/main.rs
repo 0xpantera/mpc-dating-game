@@ -7,17 +7,8 @@ fn main() {
     ####  Hello Alice, would you date Bob? (Y/n)  ######
     ####################################################
     ");
-    let mut input = String::new();
-    
-    let _ = match io::stdin().read_line(&mut input) {
-        Ok(_) => println!("Alice has answered."),
-        Err(e) => println!("Weird anser from Alice: {}", e)
-    };
 
-    let mut alice = match input.to_lowercase().trim() {
-        "y"  => Alice::new(true).encode(),
-        _ => Alice::new(false).encode(),
-    };
+    let mut alice = validate_input("alice");
     println!("Alice's deck: {:?}", &alice);
 
     println!("
@@ -25,17 +16,8 @@ fn main() {
     ####  Hello Bob, would you date Alice? (Y/n)  ######
     ####################################################
     ");
-    let mut input = String::new();
-    
-    let _ = match io::stdin().read_line(&mut input) {
-        Ok(_) => println!("Bob has answered."),
-        Err(e) => println!("Weird anser from Bob: {}", e)
-    };
 
-    let mut bob = match input.to_lowercase().trim() {
-        "y"  => Bob::new(true).encode(),
-        _ => Bob::new(false).encode(),
-    };
+    let mut bob = validate_input("bob");
     println!("Bob's deck: {:?}", &bob);
 
     let mut joined_deck = Deck::join(&mut alice, &mut bob);
@@ -46,11 +28,7 @@ fn main() {
     ################################################################
     ");
 
-    let mut shift_input = String::new();
-    let _ = io::stdin().read_line(&mut shift_input).unwrap();
-    let alice_shifts = shift_input.trim().parse::<usize>().unwrap();
-
-    Deck::cyclic_shift(&mut joined_deck, alice_shifts);
+    validate_shifts(&mut joined_deck);
 
     println!("
     ################################################################
@@ -58,11 +36,7 @@ fn main() {
     ################################################################
     ");
 
-    let mut shift_input = String::new();
-    let _ = io::stdin().read_line(&mut shift_input).unwrap();
-    let bob_shifts = shift_input.trim().parse::<usize>().unwrap();
-
-    Deck::cyclic_shift(&mut joined_deck, bob_shifts);
+    validate_shifts(&mut joined_deck);
 
     match joined_deck.decode() {
         true => println!("It's a match!"),
@@ -70,3 +44,39 @@ fn main() {
     }
 }
 
+// TODO: matching between bob and alice is fucked
+fn validate_input(player: &str) -> Deck {
+    let mut input = String::new();
+    
+    let _ = io::stdin().read_line(&mut input).unwrap();
+
+    let deck = match player {
+        "alice" =>
+            match input.to_lowercase().trim() {
+                "y"  => Alice::new(true).encode(),
+                _ => Alice::new(false).encode(),
+            }
+        "bob" =>
+            match input.to_lowercase().trim() {
+                "y" => Bob::new(true).encode(),
+                _ => Bob::new(false).encode(),
+            }
+        _ => Bob::new(true).encode()
+    };
+    deck
+}
+
+
+fn validate_shifts(d: &mut Deck) -> () {
+    let mut shift_input = String::new();
+    let _ = io::stdin().read_line(&mut shift_input).unwrap();
+    let shifts = shift_input.trim().parse::<usize>().unwrap_or(0);
+    
+    let validated_shifts = match shifts {
+        0..=5 => shifts,
+        _ => 0,
+    };
+
+
+    Deck::cyclic_shift(d, validated_shifts);
+}
